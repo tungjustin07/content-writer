@@ -4,6 +4,8 @@ out/
 .env
 .env.local
 data/projects/*.json
+data/projects/*.final.md
 !data/projects/.gitkeep
+data/inputs/
 *.tsbuildinfo
 next-env.d.ts
