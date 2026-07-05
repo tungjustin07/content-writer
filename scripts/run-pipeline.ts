@@ -29,6 +29,7 @@ const MAX_ITERATIONS_DEFAULT = 5;
 const VOICE_DIR = path.join(process.cwd(), "data", "inputs", "voice");
 const STYLE_GUIDE_PATH = path.join(VOICE_DIR, "style-guide.md");
 const STYLE_HASH_PATH = path.join(VOICE_DIR, "style-guide.hash");
+const DIAGNOSTIC_ANSWERS_PATH = path.join(VOICE_DIR, "diagnostic-answers.json");
 
 function parseArgs(argv: string[]): Record<string, string | boolean> {
   const args: Record<string, string | boolean> = {};
@@ -58,25 +59,41 @@ async function loadVoiceSamples(): Promise<string> {
   return contents.join("\n\n");
 }
 
+async function loadDiagnosticAnswers(): Promise<Record<string, string>> {
+  const raw = await fs.readFile(DIAGNOSTIC_ANSWERS_PATH, "utf-8").catch(() => null);
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw) as Record<string, string>;
+  } catch {
+    console.log(`Could not parse ${DIAGNOSTIC_ANSWERS_PATH} as JSON — ignoring it.`);
+    return {};
+  }
+}
+
 async function getStyleGuide(regen: boolean): Promise<string> {
   const samples = await loadVoiceSamples();
-  if (!samples.trim()) {
-    console.log("No voice sample files found in data/inputs/voice/ — skipping voice tuning.");
+  const diagnosticAnswers = await loadDiagnosticAnswers();
+  if (!samples.trim() && Object.keys(diagnosticAnswers).length === 0) {
+    console.log("No voice sample files or diagnostic answers found in data/inputs/voice/ — skipping voice tuning.");
     return "";
   }
-  const hash = hashOf(samples);
+  const hash = hashOf(samples + JSON.stringify(diagnosticAnswers));
   if (!regen) {
     const cachedHash = await fs.readFile(STYLE_HASH_PATH, "utf-8").catch(() => null);
     if (cachedHash === hash) {
       const cached = await fs.readFile(STYLE_GUIDE_PATH, "utf-8").catch(() => null);
       if (cached) {
-        console.log("Using cached style guide (voice samples unchanged — pass --regen-voice to force a rebuild).");
+        console.log("Using cached style guide (inputs unchanged — pass --regen-voice to force a rebuild).");
         return cached;
       }
     }
   }
-  console.log(`Generating style guide from ${samples.length.toLocaleString()} chars of writing samples...`);
-  const styleSummary = await generateStyleGuide(samples);
+  console.log(
+    `Generating style guide from ${samples.length.toLocaleString()} chars of writing samples and ${
+      Object.keys(diagnosticAnswers).length
+    } diagnostic answer(s)...`
+  );
+  const styleSummary = await generateStyleGuide(samples, diagnosticAnswers);
   await fs.mkdir(VOICE_DIR, { recursive: true });
   await fs.writeFile(STYLE_GUIDE_PATH, styleSummary, "utf-8");
   await fs.writeFile(STYLE_HASH_PATH, hash, "utf-8");
@@ -104,6 +121,13 @@ async function main() {
   const skipInterview = !!args["skip-interview"];
   const regenVoice = !!args["regen-voice"];
   const origin = (typeof args.origin === "string" ? args.origin : "own_idea") as IdeaInput["origin"];
+
+  if (args["voice-only"]) {
+    console.log("=== Step 1: Voice ===");
+    const styleSummary = await getStyleGuide(regenVoice);
+    if (styleSummary) console.log("\n" + styleSummary + "\n");
+    return;
+  }
 
   const rl = readline.createInterface({ input: stdin, output: stdout });
 
