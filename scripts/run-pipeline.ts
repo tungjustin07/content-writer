@@ -161,7 +161,10 @@ async function main() {
 
   console.log("=== Step 3: Research ===");
   let researchNote = "";
-  if (typeof args.research === "string") {
+  if (typeof args["research-file"] === "string") {
+    researchNote = await fs.readFile(args["research-file"], "utf-8");
+    project.research.push({ source: "manual", content: researchNote });
+  } else if (typeof args.research === "string") {
     researchNote = args.research;
     project.research.push({ source: "manual", content: researchNote });
   } else if (perplexityEnabled()) {
