@@ -10,6 +10,7 @@ import { FORMAT_SPEC } from "../src/lib/formats";
 import { INTERVIEWER_ORDER } from "../src/lib/personas";
 import { perplexityEnabled, researchWithPerplexity } from "../src/lib/perplexity";
 import {
+  explainScoreChanges,
   generateStyleGuide,
   getNextInterviewQuestion,
   reviewDraftWithCouncil,
@@ -126,6 +127,23 @@ async function main() {
     console.log("=== Step 1: Voice ===");
     const styleSummary = await getStyleGuide(regenVoice);
     if (styleSummary) console.log("\n" + styleSummary + "\n");
+    return;
+  }
+
+  if (typeof args.score === "string") {
+    const draft = await fs.readFile(args.score, "utf-8");
+    const reviews = await reviewDraftWithCouncil(draft);
+    console.log(`=== Council scores: ${args.score} ===\n`);
+    console.log(scoreLine(reviews));
+
+    if (typeof args.compare === "string") {
+      const prevDraft = await fs.readFile(args.compare, "utf-8");
+      const prevReviews = await reviewDraftWithCouncil(prevDraft);
+      console.log(`\n=== Council scores: ${args.compare} (comparison baseline) ===\n`);
+      console.log(scoreLine(prevReviews));
+      console.log(`\n=== Why scores changed ===\n`);
+      console.log(await explainScoreChanges(prevReviews, reviews));
+    }
     return;
   }
 

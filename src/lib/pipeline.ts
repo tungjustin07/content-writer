@@ -62,6 +62,26 @@ export async function reviewDraftWithCouncil(draft: string): Promise<CouncilRevi
   return Promise.all(COUNCIL_ORDER.map((member) => reviewDraftAs(member, draft)));
 }
 
+/** Explains WHY each judge's score moved between two versions of a draft — not just the delta. */
+export async function explainScoreChanges(
+  previousReviews: CouncilReview[],
+  newReviews: CouncilReview[]
+): Promise<string> {
+  const rows = COUNCIL_ORDER.map((member) => {
+    const prev = previousReviews.find((r) => r.member === member);
+    const next = newReviews.find((r) => r.member === member);
+    if (!prev || !next) return null;
+    return `${COUNCIL[member].name} (focus: ${COUNCIL[member].focus}): ${prev.score} -> ${next.score}\nPrevious feedback: ${prev.feedback}\nNew feedback: ${next.feedback}`;
+  })
+    .filter(Boolean)
+    .join("\n\n");
+
+  const system =
+    "You explain why a set of editorial scores changed between two draft versions. For each judge, give one sharp sentence naming the specific thing in the draft that moved the needle — not a restatement of the feedback. Call out clearly when a score went up on one axis at the cost of another (e.g. more actionable but less timeless). If a score didn't change, say so briefly.";
+
+  return askClaude(system, `Score changes:\n\n${rows}`, 700);
+}
+
 export async function writeDraft(
   rawFile: string,
   format: ContentFormat,
