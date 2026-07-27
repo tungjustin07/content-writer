@@ -1,9 +1,11 @@
 Giving an agent access to your tools is the easy part now — MCP server, an MD file in GitHub, point it at a GDrive folder, an hour of setup and it works. Operationalizing it is where it gets harder.
 
-Example: Clay filling in a CRM field that only accepts values from your taxonomy. Does the tool hold its own copy of that schema, or fetch it live from the source every time?
+Concrete case: Clay enriching a company and mapping it into your industry taxonomy. Three ways to do it:
 
-Own copy = fast, but drifts the moment someone renames a segment upstream. Live fetch = accurate, but every write now costs a round trip, plus a new failure mode if that call is slow or down.
+1. Clay holds the taxonomy in its own table — fast, but now every rename or merge upstream is a change you have to manually propagate.
+2. Pull it live from wherever it actually lives (GitHub, a warehouse table, a gdrive doc) via MCP, every time — accurate, but you're paying a round trip, and a new failure mode, on every enrichment.
+3. Skip the fixed table and let an AI column interpret the mapping in real time — no sync problem, but now "accuracy" means "however that call felt today" instead of a value you can point to.
 
-No clean answer, just a tradeoff to size correctly: how often does the taxonomy actually change, and what does a wrong guess cost you?
+Same tradeoff wearing three costumes: latency vs. accuracy vs. how deterministic you actually need the answer to be.
 
-Curious how others are landing on this.
+Genuinely asking — what's the preferred approach right now?
