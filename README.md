@@ -1,11 +1,18 @@
 # Content Machine
 
+**Public repository:** [tungjustin07/content-writer](https://github.com/tungjustin07/content-writer)
+
 An 8-step pipeline that interviews you before it writes, so nothing gets fabricated.
 
 Based on the "content machine" workflow: tune your voice, capture the idea, optionally
 research it, get interviewed by a 6-persona panel, compile everything into a raw
 markdown source-of-truth file, draft it in the right format, get scored by a 6-persona
 writer's council, then revise in a loop until every score is ≥ 9/10.
+
+```bash
+git clone https://github.com/tungjustin07/content-writer.git
+cd content-writer
+```
 
 ## The 8 steps
 
@@ -32,7 +39,6 @@ writer's council, then revise in a loop until every score is ≥ 9/10.
 ## Setup
 
 ```bash
-cd content-machine
 npm install
 cp .env.example .env.local   # add ANTHROPIC_API_KEY (required), PERPLEXITY_API_KEY (optional)
 npm run dev
@@ -41,6 +47,9 @@ npm run dev
 Open http://localhost:3000. Projects persist to `data/projects/*.json` (gitignored) so
 you can close the tab and resume — the browser remembers your project id in
 `localStorage`.
+
+**Public repo note:** never commit `.env.local` or anything under `data/`. Those paths
+are gitignored so local drafts and API keys stay off GitHub.
 
 ## Stack
 
